@@ -12,6 +12,5 @@ export GNUPGHOME=$(mktemp -d)
 trap 'rm -rf "${GNUPGHOME}"' EXIT
 
 cp "${GVDIR}"/committing-devs.gpg "${GNUPGHOME}"/pubring.gpg
-gpg --update-trustdb
 
 git -c gpg.program="${GVDIR}/gvgit-gpg-wrapper" "${@}"

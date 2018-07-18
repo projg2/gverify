@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import argparse
+import email.utils
+import json
+
+
+def main():
+	argp = argparse.ArgumentParser()
+	argp.add_argument('seeds', type=argparse.FileType('r'))
+	argp.add_argument('email')
+	vals = argp.parse_args()
+
+	seeds = json.load(vals.seeds)
+	commit_email = vals.email.lower()
+
+	for devinfo in seeds.values():
+		for uid in devinfo['uid']:
+			name, addr = email.utils.parseaddr(uid)
+			if addr.lower() == commit_email:
+				for k in devinfo['keys']:
+					# gpg --trusted-key accepts only long-ids
+					print(k[-16:])
+				break
+
+
+if __name__ == '__main__':
+	main()

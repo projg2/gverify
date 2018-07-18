@@ -1,3 +1,25 @@
-#!/bin/sh
+#!/bin/bash
 
-exec gpg "${@}"
+set -e
+
+GVDIR=${0%/*}
+
+COMMITFILE=$(mktemp -p "${GNUPGHOME}")
+cat - > "${COMMITFILE}"
+
+KEY_ARGS=()
+
+while read -r; do
+	case ${REPLY} in
+		committer*)
+			EMAIL=${REPLY##*<}
+			EMAIL=${EMAIL%%>*}
+			while read -r KEY; do
+				KEY_ARGS+=( --trusted-key "${KEY}" )
+			done < <("${GVDIR}"/gvgit-get-keyids "${GVDIR}"/gentoo-devs.seeds "${EMAIL}")
+			break
+			;;
+	esac
+done < "${COMMITFILE}"
+
+cat "${COMMITFILE}" | gpg "${KEY_ARGS[@]}" "${@}"
