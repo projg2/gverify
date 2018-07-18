@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+GVDIR=${0%/*}
+
+# TODO: update only every N minutes
+wget -q -P "${GVDIR}" -N https://qa-reports.gentoo.org/output/committing-devs.gpg
+wget -q -P "${GVDIR}" -N https://api.gentoo.org/gentoo-keys/seeds/gentoo-devs.seeds
+
+export GNUPGHOME=$(mktemp -d)
+trap 'rm -rf "${GNUPGHOME}"' EXIT
+
+cp "${GVDIR}"/committing-devs.gpg "${GNUPGHOME}"/pubring.gpg
+gpg --update-trustdb
+
+git -c gpg.program="${GVDIR}/gvgit-gpg-wrapper" "${@}"
