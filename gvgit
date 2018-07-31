@@ -5,15 +5,27 @@ set -e
 export GV_BINDIR=${0%/*}
 export GV_CACHEDIR=${XDG_CACHE_HOME:-~/.cache/gverify}
 
+# default config
+GV_KEYRING_URL=https://qa-reports.gentoo.org/output/committing-devs.gpg
+GV_SEED_URL=https://api.gentoo.org/gentoo-keys/seeds/gentoo-devs.seeds
+GV_REFRESH_MIN=15
+
+# support user config
+if [ -s "${XDG_CONFIG_HOME:-~/.config}/gverify.conf" ]; then
+	. "${XDG_CONFIG_HOME:-~/.config}/gverify.conf"
+fi
+
+# find filenames from URLs
+GV_KEYRING_FILENAME=${GV_KEYRING_URL##*/}
+GV_SEED_FILENAME=${GV_SEED_URL##*/}
+
 mkdir -p "${GV_CACHEDIR}"
 # update every 15 minutes
 # note: we use ctime since wget alters mtime to server's last-modified time
-[ -n "$(find "${GV_CACHEDIR}" -name committing-devs.gpg -cmin -15)" ] ||
-	wget -q -P "${GV_CACHEDIR}" -N \
-	https://qa-reports.gentoo.org/output/committing-devs.gpg
-[ -n "$(find "${GV_CACHEDIR}" -name gentoo-devs.seeds -cmin -15)" ] ||
-	wget -q -P "${GV_CACHEDIR}" -N \
-	https://api.gentoo.org/gentoo-keys/seeds/gentoo-devs.seeds ';'
+[ -n "$(find "${GV_CACHEDIR}" -name "${GV_KEYRING_FILENAME}" -cmin "-${GV_REFRESH_MIN}")" ] ||
+	wget -q -P "${GV_CACHEDIR}" -N "${GV_KEYRING_URL}"
+[ -n "$(find "${GV_CACHEDIR}" -name "${GV_SEED_FILENAME}" -cmin "-${GV_REFRESH_MIN}")" ] ||
+	wget -q -P "${GV_CACHEDIR}" -N "${GV_SEEDS_URL}"
 
 export GNUPGHOME=$(mktemp -d)
 trap 'rm -rf "${GNUPGHOME}"' EXIT
