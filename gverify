@@ -1,0 +1,62 @@
+#!/bin/bash
+# (c) 2018 Michał Górny
+# Released under the terms of 2-clause BSD license.
+
+set -e
+
+export GV_BINDIR=${0%/*}
+
+if [[ ${#} -ne 1 || ${1} != *..* ]]; then
+	echo "Usage: ${0:-gverify} <commit_start>..<commit_end>" >&2
+	exit 1
+fi
+
+GOOD=0
+BAD=0
+
+while read -r GIT_SIGNED GIT_COMMIT; do
+	case ${GIT_SIGNED} in
+		G)
+			: $(( GOOD++ ))
+			;;
+		B)
+			echo "${GIT_COMMIT}: bad signature!" >&2
+			: $(( BAD++ ))
+			;;
+		U)
+			echo "${GIT_COMMIT}: untrusted signature (dev-key mismatch?)" >&2
+			: $(( BAD++ ))
+			;;
+		X)
+			echo "${GIT_COMMIT}: expired signature" >&2
+			: $(( BAD++ ))
+			;;
+		Y)
+			echo "${GIT_COMMIT}: signing key expired" >&2
+			: $(( BAD++ ))
+			;;
+		R)
+			echo "${GIT_COMMIT}: signing key revoked" >&2
+			: $(( BAD++ ))
+			;;
+		E)
+			echo "${GIT_COMMIT}: unable to check signature (wrong key?)" >&2
+			: $(( BAD++ ))
+			;;
+		N)
+			echo "${GIT_COMMIT}: unsigned commit" >&2
+			: $(( BAD++ ))
+			;;
+	esac
+done < <("${GV_BINDIR}"/gvgit --no-pager log --pretty='%G? %h' "${@}")
+
+if [[ ${BAD} -gt 0 ]]; then
+	echo "Verification failed; ${GOOD} commits passed, ${BAD} commits failed" >&2
+	exit 1
+elif [[ ${GOOD} -gt 0 ]]; then
+	echo "${GOOD} commits verified successfully" >&2
+	exit 0
+else
+	echo "No commits matched the specified range" >&2
+	exit 2
+fi
