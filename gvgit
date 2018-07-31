@@ -1,9 +1,11 @@
 #!/bin/sh
+# (c) 2018 Michał Górny
+# Released under the terms of 2-clause BSD license.
 
 set -e
 
 export GV_BINDIR=${0%/*}
-export GV_CACHEDIR=${XDG_CACHE_HOME:-~/.cache/gverify}
+export GV_CACHEDIR=${XDG_CACHE_HOME:-~/.cache}/gverify
 
 # default config
 GV_KEYRING_URL=https://qa-reports.gentoo.org/output/committing-devs.gpg
@@ -16,8 +18,8 @@ if [ -s "${XDG_CONFIG_HOME:-~/.config}/gverify.conf" ]; then
 fi
 
 # find filenames from URLs
-GV_KEYRING_FILENAME=${GV_KEYRING_URL##*/}
-GV_SEED_FILENAME=${GV_SEED_URL##*/}
+export GV_KEYRING_FILENAME=${GV_KEYRING_URL##*/}
+export GV_SEED_FILENAME=${GV_SEED_URL##*/}
 
 mkdir -p "${GV_CACHEDIR}"
 # update every 15 minutes
@@ -30,6 +32,6 @@ mkdir -p "${GV_CACHEDIR}"
 export GNUPGHOME=$(mktemp -d)
 trap 'rm -rf "${GNUPGHOME}"' EXIT
 
-cp "${GV_CACHEDIR}"/committing-devs.gpg "${GNUPGHOME}"/pubring.gpg
+cp "${GV_CACHEDIR}"/"${GV_KEYRING_FILENAME}" "${GNUPGHOME}"/pubring.gpg
 
 git -c gpg.program="${GV_BINDIR}/gvgit-gpg-wrapper" "${@}"

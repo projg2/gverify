@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# (c) 2018 Michał Górny
+# Released under the terms of 2-clause BSD license.
 
 import argparse
 import email.utils
