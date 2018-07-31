@@ -27,7 +27,7 @@ mkdir -p "${GV_CACHEDIR}"
 [ -n "$(find "${GV_CACHEDIR}" -name "${GV_KEYRING_FILENAME}" -cmin "-${GV_REFRESH_MIN}")" ] ||
 	wget -q -P "${GV_CACHEDIR}" -N "${GV_KEYRING_URL}"
 [ -n "$(find "${GV_CACHEDIR}" -name "${GV_SEED_FILENAME}" -cmin "-${GV_REFRESH_MIN}")" ] ||
-	wget -q -P "${GV_CACHEDIR}" -N "${GV_SEEDS_URL}"
+	wget -q -P "${GV_CACHEDIR}" -N "${GV_SEED_URL}"
 
 export GNUPGHOME=$(mktemp -d)
 trap 'rm -rf "${GNUPGHOME}"' EXIT
