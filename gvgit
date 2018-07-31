@@ -3,14 +3,15 @@
 set -e
 
 export GV_BINDIR=${0%/*}
-export GV_CACHEDIR=${GV_BINDIR}
+export GV_CACHEDIR=${XDG_CACHE_HOME:-~/.cache/gverify}
 
+mkdir -p "${GV_CACHEDIR}"
 # update every 15 minutes
 # note: we use ctime since wget alters mtime to server's last-modified time
-find "${GV_CACHEDIR}"/committing-devs.gpg -cmin +15 -exec \
+[ -n "$(find "${GV_CACHEDIR}" -name committing-devs.gpg -cmin -15)" ] ||
 	wget -q -P "${GV_CACHEDIR}" -N \
-	https://qa-reports.gentoo.org/output/committing-devs.gpg ';'
-find "${GV_CACHEDIR}"/gentoo-devs.seeds -cmin +15 -exec \
+	https://qa-reports.gentoo.org/output/committing-devs.gpg
+[ -n "$(find "${GV_CACHEDIR}" -name gentoo-devs.seeds -cmin -15)" ] ||
 	wget -q -P "${GV_CACHEDIR}" -N \
 	https://api.gentoo.org/gentoo-keys/seeds/gentoo-devs.seeds ';'
 
