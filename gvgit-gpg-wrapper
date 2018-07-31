@@ -2,7 +2,11 @@
 
 set -e
 
-GVDIR=${0%/*}
+if [ -z "${GV_BINDIR}" ] || [ -z "${GV_CACHEDIR}" ]; then
+	echo "GV_BINDIR or GV_CACHEDIR is not set" >&2
+	echo "Please run this script via gvgit" >&2
+	exit 1
+fi
 
 COMMITFILE=$(mktemp -p "${GNUPGHOME}")
 cat - > "${COMMITFILE}"
@@ -16,7 +20,7 @@ while read -r; do
 			EMAIL=${EMAIL%%>*}
 			while read -r KEY; do
 				KEY_ARGS+=( --trusted-key "${KEY}" )
-			done < <("${GVDIR}"/gvgit-get-keyids "${GVDIR}"/gentoo-devs.seeds "${EMAIL}")
+			done < <("${GV_BINDIR}"/gvgit-get-keyids "${GV_CACHEDIR}"/gentoo-devs.seeds "${EMAIL}")
 			break
 			;;
 	esac
