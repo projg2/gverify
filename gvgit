@@ -4,9 +4,14 @@ set -e
 
 GVDIR=${0%/*}
 
-# TODO: update only every N minutes
-wget -q -P "${GVDIR}" -N https://qa-reports.gentoo.org/output/committing-devs.gpg
-wget -q -P "${GVDIR}" -N https://api.gentoo.org/gentoo-keys/seeds/gentoo-devs.seeds
+# update every 15 minutes
+# note: we use ctime since wget alters mtime to server's last-modified time
+find "${GVDIR}"/committing-devs.gpg -cmin +15 -exec \
+	wget -q -P "${GVDIR}" -N \
+	https://qa-reports.gentoo.org/output/committing-devs.gpg ';'
+find "${GVDIR}"/gentoo-devs.seeds -cmin +15 -exec \
+	wget -q -P "${GVDIR}" -N \
+	https://api.gentoo.org/gentoo-keys/seeds/gentoo-devs.seeds ';'
 
 export GNUPGHOME=$(mktemp -d)
 trap 'rm -rf "${GNUPGHOME}"' EXIT
