@@ -22,12 +22,18 @@ export GV_KEYRING_FILENAME=${GV_KEYRING_URL##*/}
 export GV_SEED_FILENAME=${GV_SEED_URL##*/}
 
 mkdir -p "${GV_CACHEDIR}"
-# update every 15 minutes
-# note: we use ctime since wget alters mtime to server's last-modified time
-[ -n "$(find "${GV_CACHEDIR}" -name "${GV_KEYRING_FILENAME}" -cmin "-${GV_REFRESH_MIN}")" ] ||
+# update every N minutes
+GV_FORCE_REFRESH=0
+[ -n "$(find "${GV_CACHEDIR}" -name ".last-update" -mmin "-${GV_REFRESH_MIN}")" ] ||
+	GV_FORCE_REFRESH=1
+if [ ${GV_FORCE_REFRESH} == 1 ] || ! [ -f "${GV_CACHEDIR}/${GV_KEYRING_FILENAME}" ]; then
 	wget -q -P "${GV_CACHEDIR}" -N "${GV_KEYRING_URL}"
-[ -n "$(find "${GV_CACHEDIR}" -name "${GV_SEED_FILENAME}" -cmin "-${GV_REFRESH_MIN}")" ] ||
+	touch "${GV_CACHEDIR}"/.last-update
+fi
+if [ ${GV_FORCE_REFRESH} == 1 ] || ! [ -f "${GV_CACHEDIR}/${GV_SEED_FILENAME}" ]; then
 	wget -q -P "${GV_CACHEDIR}" -N "${GV_SEED_URL}"
+	touch "${GV_CACHEDIR}"/.last-update
+fi
 
 export GNUPGHOME=$(mktemp -d)
 trap 'rm -rf "${GNUPGHOME}"' EXIT
