@@ -20,12 +20,18 @@ while read -r; do
 		committer*)
 			EMAIL=${REPLY##*<}
 			EMAIL=${EMAIL%%>*}
-			while read -r KEY; do
-				KEY_ARGS+=( --trusted-key "${KEY}" )
-			done < <("${GV_BINDIR}"/gvgit-get-keyids "${GV_CACHEDIR}/${GV_SEED_FILENAME}" "${EMAIL}")
+			KEY_ARGS+=( --keyring "${EMAIL}.gpg" )
+			# create the user keyring from the main keyring
+			if [[ ! -f ${GNUPGHOME}/${EMAIL}.gpg ]]; then
+				KEYS=()
+				while read -r KEY; do
+					KEYS+=( "${KEY}" )
+				done < <("${GV_BINDIR}"/gvgit-get-keyids "${GV_CACHEDIR}/${GV_SEED_FILENAME}" "${EMAIL}")
+				gpg -q --export "${KEYS[@]}" | gpg -q --no-default-keyring "${KEY_ARGS[@]}" --import
+			fi
 			break
 			;;
 	esac
 done < "${COMMITFILE}"
 
-cat "${COMMITFILE}" | gpg "${KEY_ARGS[@]}" "${@}"
+cat "${COMMITFILE}" | gpg --trust-model=always --no-default-keyring "${KEY_ARGS[@]}" "${@}"
