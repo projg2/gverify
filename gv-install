@@ -51,7 +51,7 @@ if [ "$(git symbolic-ref HEAD)" = "refs/heads/master" ]; then
 	if [ -n "${REMOTE}" ]; then
 		MBASE=$(git merge-base "remotes/${REMOTE}/master" master)
 		if [ -n "${MBASE}" ]; then
-			gverify "${MBASE}^..${MBASE}"
+			gverify "${MBASE}" -1
 		fi
 	fi
 fi
