@@ -1,0 +1,54 @@
+====================================================
+gverify -- simple gentoo.git commit verification tool
+=====================================================
+(c) 2018 Michał Górny
+
+
+Tools
+-----
+
+``gverify [<git-log-args>...]``
+  Verifies the commits in the repository in current directory.  Takes
+  zero or more arguments that are passed to 'git log' to select commits
+  to verify.  Prints the results to stderr.  Exit status is zero for
+  complete success, non-zero if at least one commit failed validation.
+
+  Examples:
+  - ``gverify`` -- verifies complete history.
+  - ``gverify -1`` -- verifies current commit.
+  - ``gverify abcedf01..01abcdef`` -- verifies specified commit range.
+  - ``gverify origin/master -1`` -- verifies tip of remote master.
+
+``gvgit [<args>...]``
+  Wrapper over git that enables gverify-backed GnuPG instance.  Use it
+  instead of ``git`` if you wish built-in git signature verification
+  to use gverify.  Note that this will prevent git from using your local
+  GPG keyring, so don't use it to sign commits.
+
+  Examples:
+  - ``gvgit log --show-signature`` -- print log with signatures checked.
+
+``gv-install <repo>``
+  Installs verification hooks to the specified repository.  See `Hooks`_.
+
+
+Hooks
+-----
+
+Installing the following ``post-merge`` and ``pre-rebase`` hook
+is recommended (they can be automatically installed using
+``gv-install``)::
+
+    if [ "$(git symbolic-ref HEAD)" = "refs/heads/master" ]; then
+      REMOTE=$(git config branch.master.remote)
+      if [ -n "${REMOTE}" ]; then
+        MBASE=$(git merge-base "remotes/${REMOTE}/master" master)
+        if [ -n "${MBASE}" ]; then
+          gverify "${MBASE}" -1
+        fi
+      fi
+    fi
+
+This ensures that whenever master is updated as a result of merge
+(usually ``git pull``) or rebase is started (which is frequently
+required before push), the tip of remote branch is verified.
