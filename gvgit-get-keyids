@@ -21,8 +21,7 @@ def main():
 			name, addr = email.utils.parseaddr(uid)
 			if addr.lower() == commit_email:
 				for k in devinfo['keys']:
-					# gpg --trusted-key accepts only long-ids
-					print(k[-16:])
+					print(k)
 				break
 
 
