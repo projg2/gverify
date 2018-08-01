@@ -21,14 +21,14 @@ clean:
 build/gverify: gverify
 	mkdir -p build
 	rm -f $@ $@.tmp
-	sed -e '/GV_BINDIR/s@=.*@=$(BINDIR)@' $< > $@.tmp
+	sed -e '/GV_BINDIR=/s@=.*@=$(BINDIR)@' $< > $@.tmp
 	chmod a-w,a+x $@.tmp
 	mv $@.tmp $@
 
 build/gvgit: gvgit
 	mkdir -p build
 	rm -f $@ $@.tmp
-	sed -e '/GV_BINDIR/s@=.*@=$(GV_BINDIR)@' $< > $@.tmp
+	sed -e '/GV_BINDIR=/s@=.*@=$(GV_BINDIR)@' $< > $@.tmp
 	chmod a-w,a+x $@.tmp
 	mv $@.tmp $@
 
