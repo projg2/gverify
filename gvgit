@@ -1,5 +1,5 @@
 #!/bin/sh
-# (c) 2018 Michał Górny
+# (c) 2018-2019 Michał Górny
 # Released under the terms of 2-clause BSD license.
 
 set -e
@@ -9,7 +9,8 @@ export GV_CACHEDIR=${XDG_CACHE_HOME:-~/.cache}/gverify
 
 # default config
 GV_KEYRING_URL=https://qa-reports.gentoo.org/output/committing-devs.gpg
-GV_SEED_URL=https://api.gentoo.org/gentoo-keys/seeds/gentoo-devs.seeds
+GV_AUTH_KEYS=/usr/share/openpgp-keys/gentoo-auth.asc
+GV_AUTH_KEYS_OWNERTRUST=/usr/share/openpgp-keys/gentoo-auth-ownertrust.txt
 GV_REFRESH_MIN=15
 
 # support user config
@@ -19,25 +20,28 @@ fi
 
 # find filenames from URLs
 export GV_KEYRING_FILENAME=${GV_KEYRING_URL##*/}
-export GV_SEED_FILENAME=${GV_SEED_URL##*/}
 
 mkdir -p "${GV_CACHEDIR}"
 # update every N minutes
 GV_FORCE_REFRESH=0
 [ -n "$(find "${GV_CACHEDIR}" -name ".last-update" -mmin "-${GV_REFRESH_MIN}")" ] ||
 	GV_FORCE_REFRESH=1
-if [ ${GV_FORCE_REFRESH} == 1 ] || ! [ -f "${GV_CACHEDIR}/${GV_KEYRING_FILENAME}" ]; then
+if [ ${GV_FORCE_REFRESH} = 1 ] || ! [ -f "${GV_CACHEDIR}/${GV_KEYRING_FILENAME}" ]; then
 	wget -q -P "${GV_CACHEDIR}" -N "${GV_KEYRING_URL}"
-	touch "${GV_CACHEDIR}"/.last-update
-fi
-if [ ${GV_FORCE_REFRESH} == 1 ] || ! [ -f "${GV_CACHEDIR}/${GV_SEED_FILENAME}" ]; then
-	wget -q -P "${GV_CACHEDIR}" -N "${GV_SEED_URL}"
+	rm -f "${GV_CACHEDIR}"/pubring.gpg
 	touch "${GV_CACHEDIR}"/.last-update
 fi
 
 export GNUPGHOME=$(mktemp -d)
 trap 'rm -rf "${GNUPGHOME}"' EXIT
 
-cp "${GV_CACHEDIR}"/"${GV_KEYRING_FILENAME}" "${GNUPGHOME}"/pubring.gpg
+if [ -f "${GV_CACHEDIR}"/pubring.gpg ]; then
+	cp "${GV_CACHEDIR}"/pubring.gpg "${GV_CACHEDIR}"/trustdb.gpg "${GNUPGHOME}"/
+else
+	cp "${GV_CACHEDIR}"/"${GV_KEYRING_FILENAME}" "${GNUPGHOME}"/pubring.gpg
+	gpg -q --import-ownertrust < "${GV_AUTH_KEYS_OWNERTRUST}"
+	gpg -q --import "${GV_AUTH_KEYS}"
+	cp "${GNUPGHOME}"/pubring.gpg "${GNUPGHOME}"/trustdb.gpg "${GV_CACHEDIR}"/
+fi
 
 git -c gpg.program="${GV_BINDIR}/gvgit-gpg-wrapper" "${@}"
